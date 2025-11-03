@@ -1,0 +1,6 @@
+# Ignore everything in Downloads folder
+/*
+
+# But don't ignore the Photobooth directory and gitignore
+!/Photobooth/
+!.gitignore
