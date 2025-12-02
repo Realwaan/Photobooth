@@ -1,24 +1,46 @@
 import React from 'react'
+import { motion } from 'framer-motion'
+import {
+  Palette,
+  Shapes,
+  Sparkles,
+  Tag,
+  RefreshCw,
+  Download,
+  Calendar,
+  Clock,
+  Check,
+  Eye,
+  Loader2
+} from 'lucide-react'
 
-const Customization = ({ customOptions, onChange, onRetake, onDownload }) => {
+/**
+ * Customization Component - Photo Strip Options
+ * 
+ * Color Theory Notes:
+ * - Frame colors provide user choice while maintaining visual harmony
+ * - Selected states use consistent Rose/Pink gradient
+ * - Grouped sections use subtle backgrounds for visual organization
+ */
+
+const Customization = ({ customOptions, onChange, onRetake, onDownload, onPreview, isGenerating }) => {
   const frameColors = [
-    { id: 'rainbow', label: 'Rainbow', style: 'linear-gradient(45deg, red, orange, yellow, green, blue, purple)' },
-    { id: '#ffb6c1', label: 'Pink', style: '#ffb6c1' },
-    { id: '#add8e6', label: 'Blue', style: '#add8e6' },
-    { id: '#ffffe0', label: 'Yellow', style: '#ffffe0' },
-    { id: '#90ee90', label: 'Green', style: '#90ee90' },
-    { id: '#dda0dd', label: 'Plum', style: '#dda0dd' },
-    { id: '#d2b48c', label: 'Tan', style: '#d2b48c' },
-    { id: '#8b0000', label: 'Dark Red', style: '#8b0000' },
-    { id: '#ffffff', label: 'White', style: '#ffffff' },
+    { id: '#1E293B', label: 'Navy', style: '#1E293B' },
     { id: '#000000', label: 'Black', style: '#000000' },
+    { id: '#4a1942', label: 'Burgundy', style: '#4a1942' },
+    { id: '#ffffff', label: 'White', style: '#ffffff' },
+    { id: 'rainbow', label: 'Rainbow', gradient: true },
+    { id: '#F43F5E', label: 'Rose', style: '#F43F5E' },
+    { id: '#8B5CF6', label: 'Violet', style: '#8B5CF6' },
+    { id: '#F59E0B', label: 'Amber', style: '#F59E0B' },
+    { id: '#10B981', label: 'Emerald', style: '#10B981' },
+    { id: '#3B82F6', label: 'Blue', style: '#3B82F6' },
+    { id: '#EC4899', label: 'Pink', style: '#EC4899' },
   ]
 
   const shapes = [
     { id: 'square', icon: '⬜', label: 'Square' },
     { id: 'rounded', icon: '▢', label: 'Rounded' },
-    { id: 'circle', icon: '⭕', label: 'Circle' },
-    { id: 'heart', icon: '❤️', label: 'Heart' },
   ]
 
   const stickers = [
@@ -35,161 +57,211 @@ const Customization = ({ customOptions, onChange, onRetake, onDownload }) => {
     crown: '👑', fire: '🔥', rainbow: '🌈', moon: '🌙'
   }
 
-  return (
-    <div className="space-y-6 card p-8">
-      <h3 className="text-3xl font-bold text-white text-center mb-6">
-        Customize Your Photo
-      </h3>
+  // Section component for consistent styling
+  const Section = ({ icon: Icon, title, children, delay = 0 }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="bg-slate-800/30 rounded-xl p-5 border border-slate-700/30"
+    >
+      <h4 className="text-white font-medium mb-4 flex items-center gap-2 text-sm">
+        <Icon className="w-4 h-4 text-rose-400" />
+        {title}
+      </h4>
+      {children}
+    </motion.div>
+  )
 
-      <div className="space-y-6">
+  return (
+    <div className="bg-slate-800/20 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-6">
+      <motion.h3 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-xl font-semibold text-white text-center mb-6 flex items-center justify-center gap-2"
+      >
+        <Sparkles className="w-5 h-5 text-rose-400" />
+        Customize Your Strip
+      </motion.h3>
+
+      <div className="grid md:grid-cols-2 gap-4">
         {/* Frame Color */}
-        <div className="bg-slate-700/30 rounded-xl p-6">
-          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <span className="text-xl">🎨</span> Frame Color
-          </h4>
-          <div className="flex flex-wrap gap-3">
+        <Section icon={Palette} title="Frame Color" delay={0.1}>
+          <div className="flex flex-wrap gap-2">
             {frameColors.map((color) => (
-              <button
+              <motion.button
                 key={color.id}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => onChange({ frameColor: color.id })}
-                className={`w-12 h-12 rounded-full border-4 transition-all duration-200 ${
+                className={`relative w-9 h-9 rounded-full border-2 transition-all duration-200 flex items-center justify-center ${
                   customOptions.frameColor === color.id
-                    ? 'border-white scale-110 shadow-lg'
-                    : 'border-transparent hover:border-slate-400 hover:scale-105'
+                    ? 'border-white shadow-lg shadow-white/20'
+                    : 'border-slate-600 hover:border-slate-400'
                 }`}
-                style={{ background: color.style }}
+                style={{ 
+                  background: color.gradient 
+                    ? 'linear-gradient(135deg, #F43F5E, #F59E0B, #10B981, #3B82F6, #8B5CF6)' 
+                    : color.style 
+                }}
                 title={color.label}
               >
                 {customOptions.frameColor === color.id && (
-                  <span className="text-white text-xl drop-shadow-lg">✓</span>
+                  <Check className="w-4 h-4 text-white drop-shadow-md" strokeWidth={3} />
                 )}
-              </button>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </Section>
 
         {/* Photo Shape */}
-        <div className="bg-slate-700/30 rounded-xl p-6">
-          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <span className="text-xl">📐</span> Photo Shape
-          </h4>
-          <div className="flex gap-3 flex-wrap">
+        <Section icon={Shapes} title="Photo Shape" delay={0.2}>
+          <div className="flex gap-2 flex-wrap">
             {shapes.map((shape) => (
-              <button
+              <motion.button
                 key={shape.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => onChange({ photoShape: shape.id })}
-                className={`w-16 h-16 rounded-xl transition-all duration-200 flex items-center justify-center text-3xl ${
+                className={`w-12 h-12 rounded-lg transition-all duration-200 flex items-center justify-center text-xl ${
                   customOptions.photoShape === shape.id
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg scale-110'
-                    : 'bg-slate-600/50 hover:bg-slate-500/50 hover:scale-105'
+                    ? 'bg-gradient-to-br from-rose-500 to-pink-500 shadow-lg shadow-rose-500/20'
+                    : 'bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600/50'
                 }`}
                 title={shape.label}
               >
                 {shape.icon}
-              </button>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </Section>
 
-        {/* Stickers */}
-        <div className="bg-slate-700/30 rounded-xl p-6">
-          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <span className="text-xl">✨</span> Stickers
-          </h4>
-          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-12 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+        {/* Stickers - Full Width */}
+        <Section icon={Sparkles} title="Stickers" delay={0.3}>
+          <div className="grid grid-cols-8 gap-1.5 max-h-32 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
             {stickers.map((sticker) => (
-              <button
+              <motion.button
                 key={sticker}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => onChange({ sticker })}
-                className={`w-12 h-12 rounded-lg transition-all duration-200 flex items-center justify-center text-2xl ${
+                className={`w-9 h-9 rounded-lg transition-all duration-200 flex items-center justify-center text-lg ${
                   customOptions.sticker === sticker
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg scale-110'
-                    : 'bg-slate-600/50 hover:bg-slate-500/50 hover:scale-105'
+                    ? 'bg-gradient-to-br from-rose-500 to-pink-500 shadow-lg'
+                    : 'bg-slate-700/50 hover:bg-slate-600/50'
                 }`}
               >
                 {stickerEmojis[sticker]}
-              </button>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </Section>
 
-        {/* Logo & Options */}
-        <div className="bg-slate-700/30 rounded-xl p-6">
-          <h4 className="text-white font-semibold mb-4 flex items-center gap-2">
-            <span className="text-xl">🏷️</span> Logo & Options
-          </h4>
-          <div className="space-y-4">
-            <div className="flex gap-3 flex-wrap">
+        {/* Logo & Date Options */}
+        <Section icon={Tag} title="Text Options" delay={0.4}>
+          <div className="space-y-3">
+            {/* Language Logo */}
+            <div className="flex gap-2">
               {['ENG', 'KOR', 'CN'].map((logo) => (
-                <button
+                <motion.button
                   key={logo}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={() => onChange({ logo })}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     customOptions.logo === logo
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                      : 'bg-slate-600/50 text-slate-300 hover:bg-slate-500/50'
+                      ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 border border-slate-600/50'
                   }`}
                 >
                   {logo}
-                </button>
+                </motion.button>
               ))}
             </div>
+            
+            {/* Date/Time Toggles */}
             <div className="flex gap-4 flex-wrap">
-              <label className="flex items-center gap-2 text-white cursor-pointer hover:text-pink-300 transition-colors">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-white transition-colors text-sm">
+                <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                  customOptions.addDate ? 'bg-rose-500' : 'bg-slate-700 border border-slate-600'
+                }`}>
+                  {customOptions.addDate && <Check className="w-3 h-3 text-white" />}
+                </div>
                 <input
                   type="checkbox"
                   checked={customOptions.addDate}
                   onChange={(e) => onChange({ addDate: e.target.checked })}
-                  className="w-5 h-5 rounded accent-pink-500"
+                  className="sr-only"
                 />
-                <span>Add Date</span>
+                <Calendar className="w-3.5 h-3.5" />
+                Date
               </label>
-              <label className="flex items-center gap-2 text-white cursor-pointer hover:text-pink-300 transition-colors">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-white transition-colors text-sm">
+                <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                  customOptions.addTime ? 'bg-rose-500' : 'bg-slate-700 border border-slate-600'
+                }`}>
+                  {customOptions.addTime && <Check className="w-3 h-3 text-white" />}
+                </div>
                 <input
                   type="checkbox"
                   checked={customOptions.addTime}
                   onChange={(e) => onChange({ addTime: e.target.checked })}
-                  className="w-5 h-5 rounded accent-pink-500"
+                  className="sr-only"
                 />
-                <span>Add Time</span>
+                <Clock className="w-3.5 h-3.5" />
+                Time
               </label>
             </div>
           </div>
-        </div>
+        </Section>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-4 pt-6 flex-wrap justify-center">
-        <button
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex gap-3 pt-6 justify-center flex-wrap"
+      >
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
           onClick={onRetake}
-          className="px-8 py-4 bg-white text-pink-500 border-2 border-pink-500 rounded-xl font-bold hover:bg-pink-50 transition-all hover:scale-105"
+          disabled={isGenerating}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800/80 text-white border border-slate-700/50 rounded-xl font-medium hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Retake Photos
-        </button>
-        <button
+          <RefreshCw className="w-4 h-4" />
+          Retake
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onPreview}
+          disabled={isGenerating}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-500 text-white rounded-xl font-medium shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
+          {isGenerating ? 'Generating...' : 'Preview'}
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.98 }}
           onClick={onDownload}
-          className="px-8 py-4 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl font-bold hover:shadow-xl hover:shadow-pink-500/50 transition-all hover:scale-105"
+          disabled={isGenerating}
+          className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl font-semibold shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Download Photostrip
-        </button>
-      </div>
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(148, 163, 184, 0.1);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(168, 85, 247, 0.5);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(168, 85, 247, 0.7);
-        }
-      `}</style>
+          {isGenerating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          Download Strip
+        </motion.button>
+      </motion.div>
     </div>
   )
 }

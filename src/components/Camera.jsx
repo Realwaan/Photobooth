@@ -1,6 +1,41 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Camera as CameraIcon,
+  Video,
+  VideoOff,
+  Timer,
+  FlipHorizontal,
+  X,
+  Play,
+  Sparkles,
+  Moon,
+  Sun,
+  Contrast,
+  Palette,
+  CircleDot,
+  CheckCircle,
+  AlertCircle,
+  ChevronDown,
+  Trash2,
+  Bug
+} from 'lucide-react'
 
-const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
+/**
+ * Camera Component - Redesigned with Color Theory
+ * 
+ * Visual Hierarchy:
+ * - Primary actions (capture) use Rose/Pink gradient for maximum attention
+ * - Secondary actions use subtle slate backgrounds
+ * - Status indicators use semantic colors (green=success, amber=warning, red=error)
+ * 
+ * UX Principles Applied:
+ * - Clear visual feedback for all interactions
+ * - Smooth transitions reduce cognitive load
+ * - Progressive disclosure (debug panel hidden by default)
+ */
+
+const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0, photos = [], onDeletePhoto }) => {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const [stream, setStream] = useState(null)
@@ -8,28 +43,30 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
   const [selectedFilter, setSelectedFilter] = useState('none')
   const [showFlash, setShowFlash] = useState(false)
   const [countdown, setCountdown] = useState(null)
-  const [facingMode, setFacingMode] = useState('user') // 'user' for front, 'environment' for back
+  const [facingMode, setFacingMode] = useState('user')
   const [error, setError] = useState(null)
   const [debugInfo, setDebugInfo] = useState([])
   const [showDebug, setShowDebug] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const addDebugLog = (message) => {
+  const addDebugLog = useCallback((message) => {
     const timestamp = new Date().toLocaleTimeString()
-    setDebugInfo(prev => [...prev, `[${timestamp}] ${message}`])
+    setDebugInfo(prev => [...prev.slice(-50), `[${timestamp}] ${message}`])
     console.log(message)
-  }
+  }, [])
 
+  // Filter definitions with lucide icons
   const filters = [
-    { name: 'none', label: 'None', class: '', icon: '✨' },
-    { name: 'grayscale', label: 'B&W', class: 'grayscale', icon: '⚫' },
-    { name: 'sepia', label: 'Sepia', class: 'sepia', icon: '🟤' },
-    { name: 'invert', label: 'Invert', class: 'invert', icon: '🔄' },
-    { name: 'saturate', label: 'Vivid', class: 'saturate-150', icon: '🌈' },
-    { name: 'contrast', label: 'Contrast', class: 'contrast-125', icon: '◐' },
-    { name: 'brightness', label: 'Bright', class: 'brightness-110', icon: '☀️' },
-    { name: 'hue', label: 'Hue', class: 'hue-rotate-90', icon: '🎨' },
+    { name: 'none', label: 'None', class: '', icon: Sparkles, color: 'from-slate-500 to-slate-600' },
+    { name: 'grayscale', label: 'B&W', class: 'grayscale', icon: Moon, color: 'from-slate-600 to-slate-700' },
+    { name: 'sepia', label: 'Sepia', class: 'sepia', icon: Sun, color: 'from-amber-500 to-orange-500' },
+    { name: 'saturate', label: 'Vivid', class: 'saturate-150', icon: Palette, color: 'from-rose-500 to-pink-500' },
+    { name: 'contrast', label: 'Contrast', class: 'contrast-125', icon: Contrast, color: 'from-violet-500 to-purple-500' },
+    { name: 'brightness', label: 'Bright', class: 'brightness-110', icon: Sun, color: 'from-yellow-400 to-amber-500' },
+    { name: 'hue', label: 'Cool', class: 'hue-rotate-90', icon: CircleDot, color: 'from-cyan-500 to-blue-500' },
   ]
 
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (stream) {
@@ -40,17 +77,14 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
 
   const startCamera = async () => {
     try {
-      setError(null) // Clear any previous errors
+      setError(null)
+      setIsLoading(true)
       addDebugLog('Starting camera...')
       
-      // Check if getUserMedia is supported
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API not supported in this browser. Please use Chrome, Edge, or Safari.')
+        throw new Error('Camera API not supported. Please use Chrome, Edge, or Safari.')
       }
 
-      addDebugLog('getUserMedia supported')
-      
-      // Request camera permissions
       addDebugLog('Requesting camera with facingMode: ' + facingMode)
       
       const constraints = {
@@ -64,50 +98,74 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
       
-      addDebugLog('Camera stream obtained')
-      addDebugLog('Video tracks: ' + mediaStream.getVideoTracks().length)
+      addDebugLog('Camera stream obtained - Tracks: ' + mediaStream.getVideoTracks().length)
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
         
-        // Wait for metadata to load
-        videoRef.current.onloadedmetadata = () => {
-          addDebugLog('Video metadata loaded')
-          videoRef.current.play()
-            .then(() => {
-              addDebugLog('Video playing successfully')
-              setStream(mediaStream)
-              setIsCameraActive(true)
-            })
-            .catch(err => {
-              addDebugLog('Error playing video: ' + err.message)
-              setError('Failed to start video playback: ' + err.message)
-            })
+        // Use both event listener and direct play attempt
+        const playVideo = async () => {
+          try {
+            await videoRef.current.play()
+            addDebugLog('Video playing successfully')
+            setStream(mediaStream)
+            setIsCameraActive(true)
+            setIsLoading(false)
+          } catch (err) {
+            addDebugLog('Error playing video: ' + err.message)
+            setError('Failed to start video: ' + err.message)
+            setIsLoading(false)
+          }
+        }
+
+        // Try to play when metadata loads, or after a short delay as fallback
+        if (videoRef.current.readyState >= 1) {
+          // Metadata already loaded
+          addDebugLog('Video metadata already available')
+          await playVideo()
+        } else {
+          videoRef.current.onloadedmetadata = async () => {
+            addDebugLog('Video metadata loaded')
+            await playVideo()
+          }
+          
+          // Fallback timeout in case onloadedmetadata doesn't fire
+          setTimeout(async () => {
+            if (!isCameraActive && isLoading && videoRef.current?.srcObject) {
+              addDebugLog('Fallback: attempting to play video')
+              await playVideo()
+            }
+          }, 1000)
         }
         
-        // Handle video errors
-        videoRef.current.onerror = (err) => {
-          addDebugLog('Video element error: ' + err)
+        videoRef.current.onerror = () => {
+          addDebugLog('Video element error')
           setError('Video playback error occurred')
+          setIsLoading(false)
         }
+      } else {
+        addDebugLog('Video ref not available')
+        setError('Video element not ready')
+        setIsLoading(false)
       }
     } catch (err) {
-      addDebugLog('Error accessing camera: ' + err.name + ' - ' + err.message)
+      addDebugLog('Error: ' + err.name + ' - ' + err.message)
+      setIsLoading(false)
+      
       let errorMessage = 'Could not access camera. '
       
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        errorMessage += 'Please allow camera permissions in your browser settings.'
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        errorMessage += 'No camera device found on your device.'
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        errorMessage += 'Camera is already in use by another application.'
-      } else if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-        errorMessage += 'Camera does not support the requested settings. Trying default settings...'
-        // Retry with basic constraints
+      if (err.name === 'NotAllowedError') {
+        errorMessage += 'Please allow camera permissions in your browser.'
+      } else if (err.name === 'NotFoundError') {
+        errorMessage += 'No camera found on your device.'
+      } else if (err.name === 'NotReadableError') {
+        errorMessage += 'Camera is in use by another application.'
+      } else if (err.name === 'OverconstrainedError') {
+        errorMessage += 'Retrying with default settings...'
         retryWithBasicConstraints()
         return
       } else {
-        errorMessage += err.message || 'Please check your camera settings.'
+        errorMessage += err.message || 'Please check your settings.'
       }
       
       setError(errorMessage)
@@ -117,10 +175,7 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
   const retryWithBasicConstraints = async () => {
     try {
       addDebugLog('Retrying with basic constraints...')
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: false
-      })
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream
@@ -128,68 +183,64 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
         setStream(mediaStream)
         setIsCameraActive(true)
         setError(null)
+        setIsLoading(false)
         addDebugLog('Camera started with basic constraints')
       }
     } catch (err) {
       addDebugLog('Retry failed: ' + err.message)
-      setError('Unable to access camera even with basic settings: ' + err.message)
+      setError('Unable to access camera: ' + err.message)
+      setIsLoading(false)
     }
   }
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop())
       setStream(null)
       setIsCameraActive(false)
+      addDebugLog('Camera stopped')
     }
-  }
+  }, [stream, addDebugLog])
 
   const toggleCamera = async () => {
     if (isCameraActive) {
       stopCamera()
       const newFacingMode = facingMode === 'user' ? 'environment' : 'user'
       setFacingMode(newFacingMode)
-      // Restart with new facing mode
-      setTimeout(async () => {
-        await startCamera()
-      }, 100)
+      addDebugLog('Switching to: ' + newFacingMode)
+      setTimeout(startCamera, 100)
     }
   }
 
-  const capturePhoto = () => {
+  const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return
 
     const video = videoRef.current
     const canvas = canvasRef.current
     const context = canvas.getContext('2d')
 
-    // Set canvas size to match video
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
 
-    // Apply filter
     context.filter = getFilterStyle(selectedFilter)
-    
-    // Draw the video frame to canvas
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
 
-    // Show flash effect
     setShowFlash(true)
-    setTimeout(() => setShowFlash(false), 500)
+    setTimeout(() => setShowFlash(false), 400)
 
-    // Get image data
     const photoData = canvas.toDataURL('image/png')
     onPhotoCapture(photoData)
-  }
+    addDebugLog('Photo captured')
+  }, [selectedFilter, onPhotoCapture, addDebugLog])
 
   const handleCaptureWithCountdown = () => {
     if (currentCount >= maxPhotos) {
-      alert(`You already have ${maxPhotos} photos! Download or retake.`)
       return
     }
 
     let count = 3
     setCountdown(count)
+    addDebugLog('Countdown started')
     
     const timer = setInterval(() => {
       count--
@@ -207,7 +258,6 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
     switch (filter) {
       case 'grayscale': return 'grayscale(100%)'
       case 'sepia': return 'sepia(100%)'
-      case 'invert': return 'invert(100%)'
       case 'saturate': return 'saturate(150%)'
       case 'contrast': return 'contrast(125%)'
       case 'brightness': return 'brightness(110%)'
@@ -216,238 +266,446 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0 }) => {
     }
   }
 
+  const photosRemaining = maxPhotos - currentCount
+
   return (
     <div className="space-y-6">
       {/* Camera View */}
-      <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-slate-900 border border-slate-700/50">
-        <div className="aspect-video relative">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl overflow-hidden shadow-2xl bg-slate-900 border border-slate-800"
+      >
+        <div className="aspect-video relative bg-gradient-to-br from-slate-900 to-slate-800">
+          {/* Hidden video element - always in DOM for ref access */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className={`absolute inset-0 w-full h-full object-cover ${
+              !isCameraActive ? 'hidden' : ''
+            } ${selectedFilter !== 'none' ? filters.find(f => f.name === selectedFilter)?.class : ''}`}
+          />
+          
           {!isCameraActive ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-              <div className="text-center space-y-6 px-4">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-xl">
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center space-y-6 px-6"
+              >
+                {/* Camera Icon */}
+                <motion.div 
+                  className="relative inline-flex"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-pink-500 rounded-2xl blur-xl opacity-40" />
+                  <div className="relative bg-gradient-to-br from-rose-500 via-pink-500 to-violet-500 p-5 rounded-2xl">
+                    <Video className="w-10 h-10 text-white" strokeWidth={1.5} />
+                  </div>
+                </motion.div>
+                
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-2">Ready to Capture</h3>
-                  <p className="text-slate-400 mb-6">Click the button below to start your camera</p>
-                  {error && (
-                    <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300 text-sm">
-                      {error}
-                    </div>
-                  )}
-                  <button
+                  <p className="text-slate-400 mb-6 max-w-sm">
+                    Click below to start your camera and begin taking photos
+                  </p>
+                  
+                  {/* Error Message */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm flex items-start gap-3"
+                      >
+                        <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <span>{error}</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  
+                  {/* Start Camera Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={startCamera}
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Start Camera
-                  </button>
-                  <div className="mt-4 text-xs text-slate-500">
-                    💡 Make sure to allow camera permissions when prompted
-                  </div>
+                    {isLoading ? (
+                      <>
+                        <motion.div 
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        />
+                        Starting...
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5" />
+                        Start Camera
+                      </>
+                    )}
+                  </motion.button>
+                  
+                  <p className="mt-4 text-xs text-slate-500 flex items-center justify-center gap-2">
+                    <Sparkles className="w-3 h-3" />
+                    Allow camera access when prompted
+                  </p>
                 </div>
-              </div>
+              </motion.div>
             </div>
           ) : (
             <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`w-full h-full object-cover ${
-                  selectedFilter !== 'none' ? filters.find(f => f.name === selectedFilter)?.class : ''
-                }`}
-              />
-              
               {/* Countdown Overlay */}
-              {countdown && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                  <div className="text-white text-9xl font-bold animate-pulse">
-                    {countdown}
-                  </div>
-                </div>
-              )}
+              <AnimatePresence>
+                {countdown && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                  >
+                    <motion.div
+                      key={countdown}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 1.5, opacity: 0 }}
+                      className="text-white text-9xl font-bold"
+                    >
+                      {countdown}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Flash Effect */}
-              {showFlash && (
-                <div className="absolute inset-0 bg-white animate-flash pointer-events-none" />
-              )}
+              <AnimatePresence>
+                {showFlash && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.1 }}
+                    className="absolute inset-0 bg-white pointer-events-none"
+                  />
+                )}
+              </AnimatePresence>
 
               {/* Camera Controls Overlay */}
               <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                <div className="flex gap-2">
-                  <button
-                    onClick={toggleCamera}
-                    className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 p-3 rounded-xl text-white hover:bg-slate-800/80 transition-all shadow-lg"
-                    title="Flip Camera"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <button
-                  onClick={stopCamera}
-                  className="bg-red-500/90 backdrop-blur-xl border border-red-400/50 px-4 py-2 rounded-xl text-white font-medium hover:bg-red-600/90 transition-all shadow-lg flex items-center gap-2"
+                {/* Left: Flip Camera */}
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={toggleCamera}
+                  className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-3 rounded-xl text-white hover:bg-slate-800/80 transition-colors shadow-lg"
+                  title="Flip Camera"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <rect x="6" y="6" width="12" height="12" rx="2" />
-                  </svg>
+                  <FlipHorizontal className="w-5 h-5" />
+                </motion.button>
+                
+                {/* Right: Stop Camera */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={stopCamera}
+                  className="bg-red-500/90 backdrop-blur-md px-4 py-2 rounded-xl text-white font-medium hover:bg-red-600 transition-colors shadow-lg flex items-center gap-2"
+                >
+                  <VideoOff className="w-4 h-4" />
                   Stop
-                </button>
+                </motion.button>
+              </div>
+
+              {/* Photo Counter */}
+              <div className="absolute bottom-4 left-4">
+                <div className="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/50">
+                  <span className="text-slate-400 text-sm">Photos: </span>
+                  <span className="text-white font-semibold">{currentCount}/{maxPhotos}</span>
+                </div>
               </div>
             </>
           )}
         </div>
         <canvas ref={canvasRef} className="hidden" />
-      </div>
+      </motion.div>
 
       {/* Filter Selection */}
-      {isCameraActive && (
-        <div className="card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-              </svg>
-              Filters
-            </h3>
-            <span className="text-sm text-slate-400">
-              {filters.find(f => f.name === selectedFilter)?.label}
-            </span>
-          </div>
-          <div className="grid grid-cols-4 md:grid-cols-8 gap-3">
-            {filters.map((filter) => (
-              <button
-                key={filter.name}
-                onClick={() => setSelectedFilter(filter.name)}
-                className={`group relative p-4 rounded-xl font-medium transition-all ${
-                  selectedFilter === filter.name
-                    ? 'bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 scale-105'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 hover:scale-105 border border-slate-600/50'
-                }`}
-              >
-                <div className="text-2xl mb-1">{filter.icon}</div>
-                <div className="text-xs">{filter.label}</div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isCameraActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700/50"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <Palette className="w-5 h-5 text-rose-400" />
+                Filters
+              </h3>
+              <span className="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+                {filters.find(f => f.name === selectedFilter)?.label}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+              {filters.map((filter, index) => {
+                const Icon = filter.icon
+                const isSelected = selectedFilter === filter.name
+                
+                return (
+                  <motion.button
+                    key={filter.name}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedFilter(filter.name)}
+                    className={`relative p-3 rounded-xl font-medium transition-all flex flex-col items-center gap-2 ${
+                      isSelected
+                        ? `bg-gradient-to-br ${filter.color} text-white shadow-lg`
+                        : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50 border border-slate-600/50'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs">{filter.label}</span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="filterIndicator"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-white rounded-full"
+                      />
+                    )}
+                  </motion.button>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Captured Photos Preview Strip */}
+      <AnimatePresence>
+        {photos.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-5 border border-slate-700/50"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <CameraIcon className="w-5 h-5 text-rose-400" />
+                Captured Photos
+              </h3>
+              <span className="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+                {photos.length} of {maxPhotos}
+              </span>
+            </div>
+            
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent">
+              {/* Empty slots first */}
+              {[...Array(maxPhotos)].map((_, index) => {
+                const photo = photos[index]
+                
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex-shrink-0 relative group"
+                  >
+                    {photo ? (
+                      <>
+                        <div className="relative w-24 h-32 sm:w-28 sm:h-36 rounded-xl overflow-hidden border-2 border-rose-500/50 shadow-lg shadow-rose-500/10">
+                          <img
+                            src={photo.data}
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                            <span className="text-xs text-white font-medium">#{index + 1}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Delete Button */}
+                        <motion.button
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          whileHover={{ scale: 1.1 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          onClick={() => onDeletePhoto && onDeletePhoto(photo.id)}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </motion.button>
+                      </>
+                    ) : (
+                      <div className="w-24 h-32 sm:w-28 sm:h-36 rounded-xl border-2 border-dashed border-slate-600 flex flex-col items-center justify-center bg-slate-800/30">
+                        <CameraIcon className="w-6 h-6 text-slate-500 mb-1" />
+                        <span className="text-xs text-slate-500">#{index + 1}</span>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(photos.length / maxPhotos) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-rose-500 to-pink-500"
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Capture Buttons */}
-      {isCameraActive && currentCount < maxPhotos && (
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={capturePhoto}
-            className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-lg px-10 py-5 rounded-xl hover:scale-105 transition-all shadow-xl shadow-purple-500/30"
+      <AnimatePresence>
+        {isCameraActive && photosRemaining > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            Capture Photo
-          </button>
-          <button
-            onClick={handleCaptureWithCountdown}
-            className="inline-flex items-center justify-center gap-3 bg-slate-800/80 backdrop-blur-xl text-white font-bold text-lg px-10 py-5 rounded-xl border border-slate-700/50 hover:bg-slate-700/80 hover:scale-105 transition-all shadow-xl"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Timer (3s)
-          </button>
-        </div>
-      )}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={capturePhoto}
+              className="inline-flex items-center justify-center gap-3 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold text-lg px-10 py-5 rounded-xl shadow-xl shadow-rose-500/25 hover:shadow-rose-500/40 transition-shadow"
+            >
+              <CameraIcon className="w-6 h-6" />
+              Capture Photo
+            </motion.button>
+            
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleCaptureWithCountdown}
+              className="inline-flex items-center justify-center gap-3 bg-slate-800/80 backdrop-blur-sm text-white font-bold text-lg px-10 py-5 rounded-xl border border-slate-700/50 hover:bg-slate-700/80 transition-colors"
+            >
+              <Timer className="w-6 h-6" />
+              Timer (3s)
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {currentCount >= maxPhotos && isCameraActive && (
-        <div className="text-center">
-          <div className="inline-block bg-green-500/20 border border-green-400/50 rounded-xl px-6 py-4">
-            <p className="text-white font-semibold text-lg">
-              ✅ All {maxPhotos} photos captured! Scroll down to customize and download.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* All Photos Captured Message */}
+      <AnimatePresence>
+        {currentCount >= maxPhotos && isCameraActive && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-6 py-4">
+              <CheckCircle className="w-6 h-6 text-emerald-400" />
+              <p className="text-white font-semibold">
+                All {maxPhotos} photos captured! Scroll down to customize.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Debug Panel */}
-      <div className="card p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30"
+      >
         <button
           onClick={() => setShowDebug(!showDebug)}
-          className="w-full flex items-center justify-between text-white hover:text-purple-400 transition-colors"
+          className="w-full flex items-center justify-between p-4 text-white hover:text-slate-300 transition-colors"
         >
-          <span className="font-semibold flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            Debug Info
+          <span className="font-medium flex items-center gap-2 text-sm">
+            <Bug className="w-4 h-4 text-slate-500" />
+            Debug Panel
           </span>
-          <svg 
-            className={`w-5 h-5 transition-transform ${showDebug ? 'rotate-180' : ''}`}
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
+          <motion.div
+            animate={{ rotate: showDebug ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
+            <ChevronDown className="w-4 h-4 text-slate-500" />
+          </motion.div>
         </button>
         
-        {showDebug && (
-          <div className="mt-4 space-y-2">
-            <div className="bg-slate-900/50 rounded-lg p-4 max-h-60 overflow-y-auto">
-              <div className="text-xs font-mono text-slate-300 space-y-1">
-                {debugInfo.length === 0 ? (
-                  <p className="text-slate-500">No debug logs yet. Start the camera to see logs.</p>
-                ) : (
-                  debugInfo.map((log, index) => (
-                    <div key={index} className="border-b border-slate-700/50 pb-1">
-                      {log}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-slate-900/50 rounded p-2">
-                <span className="text-slate-400">Camera Active:</span>
-                <span className={`ml-2 font-semibold ${isCameraActive ? 'text-green-400' : 'text-red-400'}`}>
-                  {isCameraActive ? 'Yes' : 'No'}
-                </span>
-              </div>
-              <div className="bg-slate-900/50 rounded p-2">
-                <span className="text-slate-400">Facing Mode:</span>
-                <span className="ml-2 text-white font-semibold">{facingMode}</span>
-              </div>
-              <div className="bg-slate-900/50 rounded p-2">
-                <span className="text-slate-400">Filter:</span>
-                <span className="ml-2 text-white font-semibold">{selectedFilter}</span>
-              </div>
-              <div className="bg-slate-900/50 rounded p-2">
-                <span className="text-slate-400">Photos:</span>
-                <span className="ml-2 text-white font-semibold">{currentCount}/{maxPhotos}</span>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => {
-                setDebugInfo([])
-                addDebugLog('Debug logs cleared')
-              }}
-              className="w-full bg-slate-700/50 hover:bg-slate-600/50 text-white text-xs py-2 rounded transition-colors"
+        <AnimatePresence>
+          {showDebug && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
             >
-              Clear Logs
-            </button>
-          </div>
-        )}
-      </div>
+              <div className="p-4 pt-0 space-y-3">
+                {/* Log Output */}
+                <div className="bg-slate-900/70 rounded-lg p-3 max-h-40 overflow-y-auto">
+                  <div className="text-xs font-mono text-slate-400 space-y-1">
+                    {debugInfo.length === 0 ? (
+                      <p className="text-slate-600">No logs yet...</p>
+                    ) : (
+                      debugInfo.map((log, index) => (
+                        <div key={index} className="border-b border-slate-800/50 pb-1 last:border-0">
+                          {log}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                {/* Status Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-900/50 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-slate-500">Active:</span>
+                    <span className={`font-medium ${isCameraActive ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {isCameraActive ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-slate-500">Camera:</span>
+                    <span className="text-slate-300 font-medium">{facingMode}</span>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-slate-500">Filter:</span>
+                    <span className="text-slate-300 font-medium">{selectedFilter}</span>
+                  </div>
+                  <div className="bg-slate-900/50 rounded-lg p-2 flex items-center justify-between">
+                    <span className="text-slate-500">Photos:</span>
+                    <span className="text-slate-300 font-medium">{currentCount}/{maxPhotos}</span>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setDebugInfo([])
+                    addDebugLog('Logs cleared')
+                  }}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-700/30 hover:bg-slate-700/50 text-slate-400 hover:text-slate-300 text-xs py-2 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Clear Logs
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   )
 }

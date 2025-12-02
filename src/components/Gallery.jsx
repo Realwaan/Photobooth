@@ -1,4 +1,24 @@
 import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Image,
+  Download,
+  Share2,
+  Trash2,
+  X,
+  Calendar,
+  ImageOff
+} from 'lucide-react'
+
+/**
+ * Gallery Component - Photo Collection View
+ * 
+ * Design Principles:
+ * - Grid layout provides visual organization
+ * - Hover states reveal actions progressively
+ * - Lightbox allows focused viewing
+ * - Semantic colors for destructive actions (red for delete)
+ */
 
 const Gallery = ({ photos, onDeletePhoto }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
@@ -14,7 +34,6 @@ const Gallery = ({ photos, onDeletePhoto }) => {
 
   const sharePhoto = async (photo) => {
     try {
-      // Convert data URL to blob
       const response = await fetch(photo.data)
       const blob = await response.blob()
       const file = new File([blob], `photobooth-${photo.id}.png`, { type: 'image/png' })
@@ -23,7 +42,7 @@ const Gallery = ({ photos, onDeletePhoto }) => {
         await navigator.share({
           files: [file],
           title: 'PhotoBooth Photo',
-          text: 'Check out this photo from PhotoBooth V2!'
+          text: 'Check out this photo from PhotoBooth!'
         })
       } else {
         alert('Sharing is not supported on this device. Use download instead.')
@@ -33,189 +52,208 @@ const Gallery = ({ photos, onDeletePhoto }) => {
     }
   }
 
+  // Empty State
   if (photos.length === 0) {
     return (
-      <div className="card p-20 text-center">
-        <div className="max-w-md mx-auto space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-3xl mb-4">
-            <svg className="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-2xl font-bold text-white">No Photos Yet</h3>
-          <p className="text-slate-400 text-lg">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-slate-800/30 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-16 text-center"
+      >
+        <div className="max-w-sm mx-auto space-y-4">
+          <motion.div 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-slate-800/50 rounded-2xl mb-2"
+          >
+            <ImageOff className="w-10 h-10 text-slate-500" />
+          </motion.div>
+          <h3 className="text-xl font-semibold text-white">No Photos Yet</h3>
+          <p className="text-slate-400">
             Start capturing beautiful moments with your camera
           </p>
         </div>
-      </div>
+      </motion.div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Stats Bar */}
-      <div className="card p-6">
+      {/* Header Stats */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30 p-5"
+      >
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-white mb-1">Your Gallery</h3>
-            <p className="text-slate-400">
+            <h3 className="text-xl font-semibold text-white mb-1">Your Gallery</h3>
+            <p className="text-slate-400 text-sm">
               {photos.length} {photos.length === 1 ? 'photo' : 'photos'} captured
             </p>
           </div>
-          <div className="flex items-center gap-2 text-slate-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+          <div className="bg-slate-700/50 p-3 rounded-xl">
+            <Image className="w-5 h-5 text-slate-400" />
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Gallery Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {photos.map((photo) => (
-          <div
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {photos.map((photo, index) => (
+          <motion.div
             key={photo.id}
-            className="group card overflow-hidden hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.1 }}
+            className="group relative bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30 overflow-hidden cursor-pointer"
             onClick={() => setSelectedPhoto(photo)}
           >
             <div className="aspect-video relative overflow-hidden">
               <img
                 src={photo.data}
                 alt={`Captured on ${photo.timestamp}`}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              
+              {/* Overlay on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-white/90 text-sm">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                  {/* Timestamp */}
+                  <div className="flex items-center gap-2 text-white/80 text-sm">
+                    <Calendar className="w-3.5 h-3.5" />
                     {photo.timestamp}
                   </div>
+                  
+                  {/* Action Buttons */}
                   <div className="flex gap-2">
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={(e) => {
                         e.stopPropagation()
                         downloadPhoto(photo)
                       }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 px-3 py-2 rounded-lg transition-all text-white text-sm font-medium flex items-center justify-center gap-2"
-                      title="Download"
+                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </button>
-                    <button
+                      <Download className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={(e) => {
                         e.stopPropagation()
                         sharePhoto(photo)
                       }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-xl border border-white/20 px-3 py-2 rounded-lg transition-all text-white text-sm font-medium flex items-center justify-center gap-2"
-                      title="Share"
+                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                      </svg>
-                    </button>
-                    <button
+                      <Share2 className="w-4 h-4" />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={(e) => {
                         e.stopPropagation()
                         if (confirm('Delete this photo?')) {
                           onDeletePhoto(photo.id)
                         }
                       }}
-                      className="bg-red-500/80 hover:bg-red-500 backdrop-blur-xl border border-red-400/50 px-3 py-2 rounded-lg transition-all text-white flex items-center justify-center"
-                      title="Delete"
+                      className="bg-red-500/80 hover:bg-red-500 backdrop-blur-sm px-3 py-2 rounded-lg transition-colors text-white flex items-center justify-center"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 
       {/* Lightbox Modal */}
-      {selectedPhoto && (
-        <div
-          className="fixed inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedPhoto(null)}
-        >
-          <div
-            className="relative max-w-6xl w-full animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-center justify-center p-4"
+            onClick={() => setSelectedPhoto(null)}
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute -top-14 right-0 bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 text-white p-3 rounded-xl hover:bg-slate-700/80 transition-all shadow-xl"
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25 }}
+              className="relative max-w-4xl w-full"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            {/* Image */}
-            <div className="rounded-3xl overflow-hidden shadow-2xl border border-slate-700/50">
-              <img
-                src={selectedPhoto.data}
-                alt={`Captured on ${selectedPhoto.timestamp}`}
-                className="w-full"
-              />
-            </div>
-            
-            {/* Actions */}
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
-              <button
-                onClick={() => downloadPhoto(selectedPhoto)}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+              {/* Close Button */}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute -top-14 right-0 bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 text-white p-3 rounded-xl hover:bg-slate-700 transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
-                Download
-              </button>
-              <button
-                onClick={() => sharePhoto(selectedPhoto)}
-                className="inline-flex items-center gap-2 bg-slate-800/80 backdrop-blur-xl text-white font-semibold px-6 py-3 rounded-xl border border-slate-700/50 hover:bg-slate-700/80 hover:scale-105 transition-all"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm('Delete this photo?')) {
-                    onDeletePhoto(selectedPhoto.id)
-                    setSelectedPhoto(null)
-                  }
-                }}
-                className="inline-flex items-center gap-2 bg-red-500 text-white font-semibold px-6 py-3 rounded-xl hover:bg-red-600 hover:scale-105 transition-all"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Delete
-              </button>
-            </div>
-            
-            {/* Timestamp */}
-            <div className="mt-4 text-center">
-              <div className="inline-flex items-center gap-2 bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 text-slate-300 px-4 py-2 rounded-lg">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                {selectedPhoto.timestamp}
+                <X className="w-5 h-5" />
+              </motion.button>
+              
+              {/* Image */}
+              <div className="rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50">
+                <img
+                  src={selectedPhoto.data}
+                  alt={`Captured on ${selectedPhoto.timestamp}`}
+                  className="w-full"
+                />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+              
+              {/* Actions */}
+              <div className="mt-6 flex flex-wrap gap-3 justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => downloadPhoto(selectedPhoto)}
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-rose-500/30 transition-shadow"
+                >
+                  <Download className="w-5 h-5" />
+                  Download
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => sharePhoto(selectedPhoto)}
+                  className="inline-flex items-center gap-2 bg-slate-800/80 backdrop-blur-sm text-white font-semibold px-6 py-3 rounded-xl border border-slate-700/50 hover:bg-slate-700 transition-colors"
+                >
+                  <Share2 className="w-5 h-5" />
+                  Share
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (confirm('Delete this photo?')) {
+                      onDeletePhoto(selectedPhoto.id)
+                      setSelectedPhoto(null)
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 bg-red-500 text-white font-semibold px-6 py-3 rounded-xl hover:bg-red-600 transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Delete
+                </motion.button>
+              </div>
+              
+              {/* Timestamp */}
+              <div className="mt-4 text-center">
+                <div className="inline-flex items-center gap-2 bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 text-slate-400 px-4 py-2 rounded-lg text-sm">
+                  <Calendar className="w-4 h-4" />
+                  {selectedPhoto.timestamp}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
