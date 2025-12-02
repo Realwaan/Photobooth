@@ -25,10 +25,12 @@ import {
 
 const Customization = ({ customOptions, onChange, onRetake, onDownload, onPreview, isGenerating }) => {
   const frameColors = [
-    { id: '#1E293B', label: 'Navy', style: '#1E293B' },
     { id: '#000000', label: 'Black', style: '#000000' },
+    { id: '#1E293B', label: 'Navy', style: '#1E293B' },
     { id: '#4a1942', label: 'Burgundy', style: '#4a1942' },
     { id: '#ffffff', label: 'White', style: '#ffffff' },
+    { id: 'vintage', label: 'Vintage', style: '#c4a574' },
+    { id: 'silver', label: 'Silver', style: '#606060' },
     { id: 'rainbow', label: 'Rainbow', gradient: true },
     { id: '#F43F5E', label: 'Rose', style: '#F43F5E' },
     { id: '#8B5CF6', label: 'Violet', style: '#8B5CF6' },
