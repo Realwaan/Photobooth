@@ -222,8 +222,17 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0, photos = [], 
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
 
+    // Mirror the captured image for front-facing camera
+    if (facingMode === 'user') {
+      context.translate(canvas.width, 0)
+      context.scale(-1, 1)
+    }
+
     context.filter = getFilterStyle(selectedFilter)
     context.drawImage(video, 0, 0, canvas.width, canvas.height)
+
+    // Reset transform
+    context.setTransform(1, 0, 0, 1, 0, 0)
 
     setShowFlash(true)
     setTimeout(() => setShowFlash(false), 400)
@@ -231,7 +240,7 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0, photos = [], 
     const photoData = canvas.toDataURL('image/png')
     onPhotoCapture(photoData)
     addDebugLog('Photo captured')
-  }, [selectedFilter, onPhotoCapture, addDebugLog])
+  }, [selectedFilter, onPhotoCapture, addDebugLog, facingMode])
 
   const handleCaptureWithCountdown = () => {
     if (currentCount >= maxPhotos) {
@@ -283,6 +292,7 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0, photos = [], 
             autoPlay
             playsInline
             muted
+            style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }}
             className={`absolute inset-0 w-full h-full object-cover ${
               !isCameraActive ? 'hidden' : ''
             } ${selectedFilter !== 'none' ? filters.find(f => f.name === selectedFilter)?.class : ''}`}
