@@ -87,11 +87,12 @@ const Camera = ({ onPhotoCapture, maxPhotos = 3, currentCount = 0, photos = [], 
 
       addDebugLog('Requesting camera with facingMode: ' + facingMode)
       
+      // Request Full HD resolution (1920x1080)
       const constraints = {
         video: { 
           facingMode: facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 }
         },
         audio: false
       }

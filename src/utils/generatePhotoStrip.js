@@ -67,22 +67,22 @@ const roundRect = (ctx, x, y, width, height, radius) => {
  * Draw film strip holes/markers on sides
  */
 const drawFilmMarkers = (ctx, stripWidth, stripHeight, color = '#ffffff') => {
-  const markerSize = 8
-  const markerGap = 25
-  const margin = 8
+  const markerSize = 16
+  const markerGap = 50
+  const margin = 16
   
   ctx.fillStyle = color
   ctx.globalAlpha = 0.3
   
   // Left side markers
-  for (let y = 20; y < stripHeight - 20; y += markerGap) {
+  for (let y = 40; y < stripHeight - 40; y += markerGap) {
     ctx.beginPath()
     ctx.arc(margin, y, markerSize / 2, 0, Math.PI * 2)
     ctx.fill()
   }
   
   // Right side markers
-  for (let y = 20; y < stripHeight - 20; y += markerGap) {
+  for (let y = 40; y < stripHeight - 40; y += markerGap) {
     ctx.beginPath()
     ctx.arc(stripWidth - margin, y, markerSize / 2, 0, Math.PI * 2)
     ctx.fill()
@@ -94,10 +94,10 @@ const drawFilmMarkers = (ctx, stripWidth, stripHeight, color = '#ffffff') => {
 /**
  * Draw elegant gold/metallic border around photo
  */
-const drawPhotoBorder = (ctx, x, y, width, height, borderColor = '#d4af37', borderWidth = 3) => {
+const drawPhotoBorder = (ctx, x, y, width, height, borderColor = '#d4af37', borderWidth = 6) => {
   // Outer glow effect
   ctx.shadowColor = borderColor
-  ctx.shadowBlur = 8
+  ctx.shadowBlur = 16
   ctx.strokeStyle = borderColor
   ctx.lineWidth = borderWidth
   ctx.strokeRect(x, y, width, height)
@@ -105,8 +105,8 @@ const drawPhotoBorder = (ctx, x, y, width, height, borderColor = '#d4af37', bord
   
   // Inner white line for depth
   ctx.strokeStyle = 'rgba(255,255,255,0.4)'
-  ctx.lineWidth = 1
-  ctx.strokeRect(x + 2, y + 2, width - 4, height - 4)
+  ctx.lineWidth = 2
+  ctx.strokeRect(x + 4, y + 4, width - 8, height - 8)
 }
 
 /**
@@ -117,7 +117,7 @@ const drawCornerFlourish = (ctx, x, y, size, rotation, color = '#d4af37') => {
   ctx.translate(x, y)
   ctx.rotate(rotation)
   ctx.strokeStyle = color
-  ctx.lineWidth = 2
+  ctx.lineWidth = 4
   ctx.lineCap = 'round'
   
   // Simple elegant corner curve
@@ -151,14 +151,15 @@ export async function generatePhotoStrip(photos, options) {
     customSubtitle = ''
   } = options
 
-  // Professional strip dimensions (2x6 inch ratio at 300dpi = 600x1800, scaled down)
-  const stripWidth = 400
-  const stripHeight = 1200
+  // HD Professional strip dimensions (2x6 inch ratio at high DPI)
+  // 800x2400 = 2x the previous resolution for crisp prints
+  const stripWidth = 800
+  const stripHeight = 2400
   
-  // Layout configuration
-  const padding = 25
-  const photoGap = 12
-  const footerHeight = 140
+  // Layout configuration (scaled for HD)
+  const padding = 50
+  const photoGap = 24
+  const footerHeight = 280
   const numPhotos = Math.min(photos.length, 4)
   const photoAreaHeight = stripHeight - footerHeight - padding * 2
   const photoHeight = (photoAreaHeight - (photoGap * (numPhotos - 1))) / numPhotos
@@ -241,9 +242,9 @@ export async function generatePhotoStrip(photos, options) {
       
       // Photo number marker (subtle)
       ctx.fillStyle = 'rgba(0,0,0,0.5)'
-      ctx.font = 'bold 10px Arial'
+      ctx.font = 'bold 20px Arial'
       ctx.textAlign = 'left'
-      ctx.fillText(`${i + 1}`, padding + 8, photoY + 16)
+      ctx.fillText(`${i + 1}`, padding + 16, photoY + 32)
       
     } catch (err) {
       console.error('Error loading photo:', err)
@@ -251,7 +252,7 @@ export async function generatePhotoStrip(photos, options) {
       ctx.fillStyle = '#333'
       ctx.fillRect(padding, photoY, photoWidth, photoHeight)
       ctx.fillStyle = '#666'
-      ctx.font = '14px Arial'
+      ctx.font = '28px Arial'
       ctx.textAlign = 'center'
       ctx.fillText('Photo ' + (i + 1), stripWidth / 2, photoY + photoHeight / 2)
     }
@@ -261,16 +262,16 @@ export async function generatePhotoStrip(photos, options) {
   if (sticker !== 'none' && stickerEmojis[sticker]) {
     const emoji = stickerEmojis[sticker]
     
-    // Strategic positions around edges
+    // Strategic positions around edges (HD scaled)
     const stickerPositions = [
-      { x: 8, y: 35, size: 20 },
-      { x: stripWidth - 30, y: 45, size: 18 },
-      { x: 10, y: stripHeight - footerHeight - 30, size: 22 },
-      { x: stripWidth - 28, y: stripHeight - footerHeight - 25, size: 19 },
-      { x: stripWidth / 2 - 10, y: 15, size: 16 },
-      { x: 5, y: stripHeight / 3, size: 17 },
-      { x: stripWidth - 25, y: stripHeight / 2, size: 18 },
-      { x: 8, y: stripHeight * 0.6, size: 16 },
+      { x: 16, y: 70, size: 40 },
+      { x: stripWidth - 60, y: 90, size: 36 },
+      { x: 20, y: stripHeight - footerHeight - 60, size: 44 },
+      { x: stripWidth - 56, y: stripHeight - footerHeight - 50, size: 38 },
+      { x: stripWidth / 2 - 20, y: 30, size: 32 },
+      { x: 10, y: stripHeight / 3, size: 34 },
+      { x: stripWidth - 50, y: stripHeight / 2, size: 36 },
+      { x: 16, y: stripHeight * 0.6, size: 32 },
     ]
     
     const numStickers = 6 + Math.floor(Math.random() * 3)
@@ -293,41 +294,41 @@ export async function generatePhotoStrip(photos, options) {
 
   // Decorative line above footer
   ctx.strokeStyle = accentColor
-  ctx.lineWidth = 1
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(padding, footerY + 10)
-  ctx.lineTo(stripWidth - padding, footerY + 10)
+  ctx.moveTo(padding, footerY + 20)
+  ctx.lineTo(stripWidth - padding, footerY + 20)
   ctx.stroke()
 
   // Corner flourishes
-  const flourishSize = 20
-  drawCornerFlourish(ctx, padding + 5, footerY + 25, flourishSize, 0, accentColor)
-  drawCornerFlourish(ctx, stripWidth - padding - 5, footerY + 25, flourishSize, Math.PI / 2, accentColor)
+  const flourishSize = 40
+  drawCornerFlourish(ctx, padding + 10, footerY + 50, flourishSize, 0, accentColor)
+  drawCornerFlourish(ctx, stripWidth - padding - 10, footerY + 50, flourishSize, Math.PI / 2, accentColor)
 
   // Hearts decoration
   ctx.fillStyle = accentColor
-  ctx.font = '16px Arial'
+  ctx.font = '32px Arial'
   ctx.textAlign = 'center'
-  ctx.fillText('♥ ♥', stripWidth / 2, footerY + 35)
+  ctx.fillText('♥ ♥', stripWidth / 2, footerY + 70)
 
   // Main title (custom or default)
   ctx.fillStyle = textColor
-  ctx.font = 'bold 22px Georgia, serif'
+  ctx.font = 'bold 44px Georgia, serif'
   ctx.textAlign = 'center'
   const title = customTitle || 'missing minus 20'
-  ctx.fillText(title.toUpperCase(), stripWidth / 2, footerY + 65)
+  ctx.fillText(title.toUpperCase(), stripWidth / 2, footerY + 130)
 
   // Subtitle / Secondary text
-  ctx.font = 'italic 14px Georgia, serif'
+  ctx.font = 'italic 28px Georgia, serif'
   ctx.fillStyle = accentColor
   const subtitle = customSubtitle || ''
   if (subtitle) {
-    ctx.fillText(subtitle, stripWidth / 2, footerY + 85)
+    ctx.fillText(subtitle, stripWidth / 2, footerY + 170)
   }
 
   // Date and hashtag
   if (addDate || addTime) {
-    ctx.font = '11px Arial'
+    ctx.font = '22px Arial'
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
     const now = new Date()
     const dateStr = now.toLocaleDateString('en-US', { 
@@ -344,20 +345,20 @@ export async function generatePhotoStrip(photos, options) {
     if (addDate) displayText += dateStr
     if (addTime) displayText += (addDate ? ' • ' : '') + timeStr
     
-    ctx.fillText(displayText, stripWidth / 2, footerY + 105)
+    ctx.fillText(displayText, stripWidth / 2, footerY + 210)
   }
 
   // Hashtag / Branding
-  ctx.font = '10px Arial'
+  ctx.font = '20px Arial'
   ctx.fillStyle = 'rgba(255,255,255,0.5)'
-  ctx.fillText('#missingminus20', stripWidth / 2, footerY + 122)
+  ctx.fillText('#missingminus20', stripWidth / 2, footerY + 244)
 
   // Bottom decorative line
   ctx.strokeStyle = accentColor
-  ctx.lineWidth = 1
+  ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.moveTo(stripWidth / 2 - 40, footerY + footerHeight - 10)
-  ctx.lineTo(stripWidth / 2 + 40, footerY + footerHeight - 10)
+  ctx.moveTo(stripWidth / 2 - 80, footerY + footerHeight - 20)
+  ctx.lineTo(stripWidth / 2 + 80, footerY + footerHeight - 20)
   ctx.stroke()
 
   return canvas.toDataURL('image/png', 1.0)
