@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button';
  * while the glass morphism effects add depth without overwhelming the composition.
  */
 
-function Landing({ onStart }) {
+function Landing({ onStart, onViewGallery }) {
   // Photo strips with initial positions (draggable)
   const [photoStrips, setPhotoStrips] = useState([
     { id: 1, x: 0, y: 0, rotation: 8, photos: ['photo1.jpg', 'photo2.jpg', 'photo3.jpg'], scale: 1 },
@@ -300,6 +300,7 @@ function Landing({ onStart }) {
           <Button 
             variant="outline"
             size="lg"
+            onClick={onViewGallery}
             className="border-slate-700 bg-slate-900/50 backdrop-blur-sm text-slate-300 hover:bg-slate-800 hover:text-white hover:border-slate-600 px-8 py-6 text-lg rounded-xl transition-all duration-300"
           >
             <ImagePlus className="w-5 h-5 mr-2" />

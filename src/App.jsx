@@ -142,7 +142,18 @@ function App() {
 
   // Landing Page
   if (showLanding) {
-    return <Landing onStart={() => setShowLanding(false)} />
+    return (
+      <>
+        <Landing 
+          onStart={() => setShowLanding(false)} 
+          onViewGallery={() => setShowSavedGallery(true)}
+        />
+        <SavedGallery 
+          isOpen={showSavedGallery} 
+          onClose={() => setShowSavedGallery(false)} 
+        />
+      </>
+    )
   }
 
   return (
