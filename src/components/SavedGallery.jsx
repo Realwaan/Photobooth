@@ -25,7 +25,7 @@ import {
  * - Real-time updates with refresh capability
  */
 
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://photobooth-production-c647.up.railway.app'
 
 const SavedGallery = ({ isOpen, onClose }) => {
   const [photostrips, setPhotostrips] = useState([])

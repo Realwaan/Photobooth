@@ -28,7 +28,7 @@ import { generatePhotoStrip, downloadPhotoStrip } from './utils/generatePhotoStr
  * - Smooth page transitions reduce cognitive load
  */
 
-const API_URL = 'http://localhost:3001'
+const API_URL = 'https://photobooth-production-c647.up.railway.app'
 
 function App() {
   const [showLanding, setShowLanding] = useState(true)
