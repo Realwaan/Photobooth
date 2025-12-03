@@ -13,6 +13,7 @@ import Landing from './components/Landing'
 import Camera from './components/Camera'
 import Gallery from './components/Gallery'
 import LayoutSelector from './components/LayoutSelector'
+import TemplateSelector from './components/TemplateSelector'
 import Customization from './components/Customization'
 import PhotoStripPreview from './components/PhotoStripPreview'
 import SavedGallery from './components/SavedGallery'
@@ -35,13 +36,15 @@ function App() {
   const [photos, setPhotos] = useState([])
   const [activeTab, setActiveTab] = useState('camera')
   const [selectedLayout, setSelectedLayout] = useState('layoutF') // Default to 4-photo classic strip
+  const [selectedTemplate, setSelectedTemplate] = useState('classic') // Default template
   const [customOptions, setCustomOptions] = useState({
     frameColor: '#1E293B', // Dark navy default
     photoShape: 'square',
     sticker: 'none',
     logo: 'ENG',
     addDate: true,
-    addTime: false
+    addTime: false,
+    template: 'classic'
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -57,7 +60,27 @@ function App() {
     layoutF: 4
   }
 
-  const requiredPhotos = layoutRequirements[selectedLayout] || 3
+  // Template requirements (all themed templates use specific photo counts)
+  const templateRequirements = {
+    classic: null, // Uses layout requirements
+    newspaper: 4,
+    kawaii: 4,
+    y2k: 4,
+    starry: 4,
+    scrapbook: 4,
+    picnic: 3,
+    coquette: 4,
+    borcelle: 3,
+    groovy: 3,
+    dreamy: 3,
+    y2kheart: 3,
+    spring: 3
+  }
+
+  // Get required photos based on template or layout
+  const requiredPhotos = selectedTemplate !== 'classic' 
+    ? templateRequirements[selectedTemplate] || 4
+    : layoutRequirements[selectedLayout] || 3
 
   const handlePhotoCapture = (photoData) => {
     const newPhoto = {
@@ -76,6 +99,11 @@ function App() {
   const handleCustomOptionsChange = (newOptions) => {
     setCustomOptions({ ...customOptions, ...newOptions })
     setPreviewUrl(null) // Reset preview when options change
+  }
+
+  const handleTemplateChange = (template) => {
+    setSelectedTemplate(template)
+    setPreviewUrl(null) // Reset preview when template changes
   }
 
   const handleRetake = () => {
@@ -97,6 +125,7 @@ function App() {
       // Generate the photo strip
       const stripDataUrl = await generatePhotoStrip(photos, {
         layout: selectedLayout,
+        template: selectedTemplate,
         ...customOptions
       })
       
@@ -130,6 +159,7 @@ function App() {
     try {
       const stripDataUrl = await generatePhotoStrip(photos, {
         layout: selectedLayout,
+        template: selectedTemplate,
         ...customOptions
       })
       setPreviewUrl(stripDataUrl)
@@ -319,15 +349,27 @@ function App() {
             </div>
           </motion.div>
 
-          {/* Layout Selector */}
+          {/* Template Selector */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="mb-8"
+            className="mb-6"
           >
-            <LayoutSelector selectedLayout={selectedLayout} onLayoutChange={setSelectedLayout} />
+            <TemplateSelector selectedTemplate={selectedTemplate} onTemplateChange={handleTemplateChange} />
           </motion.div>
+
+          {/* Layout Selector - Only show for classic template */}
+          {selectedTemplate === 'classic' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="mb-8"
+            >
+              <LayoutSelector selectedLayout={selectedLayout} onLayoutChange={setSelectedLayout} />
+            </motion.div>
+          )}
 
           {/* Main Content Area */}
           <div className="max-w-5xl mx-auto space-y-8">
