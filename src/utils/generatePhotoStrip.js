@@ -126,10 +126,26 @@ export async function generatePhotoStrip(photos, options) {
     customSubtitle = ''
   } = options
 
+  // Layout configurations - how many photos per layout
+  const layoutConfig = {
+    layoutA: 3,
+    layoutB: 4,
+    layoutC: 2,
+    layoutD: 6,
+    horizontal: 3,
+    layoutE: 3,
+    layoutF: 4
+  }
+  
+  const maxPhotos = layoutConfig[layout] || 4
+  const numPhotos = Math.min(photos.length, maxPhotos)
+
   // HD Film strip dimensions
   const sprocketWidth = 55  // Width of sprocket hole area on each side
   const stripWidth = 800
-  const stripHeight = 2400
+  // Adjust height based on number of photos
+  const baseHeight = 600  // Base height per photo
+  const stripHeight = Math.max(1600, numPhotos * baseHeight + 400)
   
   // Photo area dimensions (between sprocket holes)
   const photoAreaX = sprocketWidth
@@ -140,7 +156,6 @@ export async function generatePhotoStrip(photos, options) {
   const photoPadding = 20
   const photoGap = 20
   const footerHeight = 300
-  const numPhotos = Math.min(photos.length, 4)
   const photoAreaHeight = stripHeight - footerHeight - topPadding
   const photoHeight = (photoAreaHeight - (photoGap * (numPhotos - 1)) - photoPadding * 2) / numPhotos
   const photoWidth = photoAreaWidth - (photoPadding * 2)
