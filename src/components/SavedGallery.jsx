@@ -215,8 +215,6 @@ const SavedGallery = ({ isOpen, onClose }) => {
     })
   }, [])
 
-  if (!isOpen) return null
-
   // Handle backdrop click - only close if lightbox is not open
   const handleBackdropClick = useCallback((e) => {
     // Only close if clicking directly on the backdrop and lightbox is not open
@@ -225,21 +223,27 @@ const SavedGallery = ({ isOpen, onClose }) => {
     }
   }, [selectedPhoto, onClose])
 
+  if (!isOpen) return null
+
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
+        key="gallery-backdrop"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        transition={{ duration: 0.15 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85"
         onClick={handleBackdropClick}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          key="gallery-modal"
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.97 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-5xl max-h-[90vh] bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          className="w-full max-w-5xl max-h-[90vh] bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col will-change-transform"
         >
           {/* Header */}
           <div className="bg-slate-800/50 border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
@@ -255,34 +259,26 @@ const SavedGallery = ({ isOpen, onClose }) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={fetchPhotostrips}
                 disabled={isLoading}
-                className="p-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg text-slate-300 hover:text-white transition-colors"
+                className="p-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg text-slate-300 hover:text-white transition-colors active:scale-95"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              </button>
+              <button
                 onClick={onClose}
-                className="p-2 bg-slate-700/50 hover:bg-red-500/50 rounded-lg text-slate-300 hover:text-white transition-colors"
+                className="p-2 bg-slate-700/50 hover:bg-red-500/50 rounded-lg text-slate-300 hover:text-white transition-colors active:scale-95"
               >
                 <X className="w-5 h-5" />
-              </motion.button>
+              </button>
             </div>
           </div>
 
           {/* Notification */}
-          <AnimatePresence>
-            {notification && (
-              <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2 ${
+          {notification && (
+            <div
+              className={`mx-6 mt-4 p-3 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200 ${
                   notification.type === 'error' 
                     ? 'bg-red-500/20 border border-red-500/30 text-red-300'
                     : 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-300'
@@ -294,9 +290,8 @@ const SavedGallery = ({ isOpen, onClose }) => {
                   <CheckCircle className="w-4 h-4" />
                 )}
                 {notification.message}
-              </motion.div>
-            )}
-          </AnimatePresence>
+            </div>
+          )}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6">
@@ -355,12 +350,14 @@ const SavedGallery = ({ isOpen, onClose }) => {
         </motion.div>
 
         {/* Lightbox */}
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {selectedPhoto && (
             <motion.div
+              key="lightbox-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
               className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95"
               onClick={(e) => {
                 e.stopPropagation()
@@ -368,10 +365,12 @@ const SavedGallery = ({ isOpen, onClose }) => {
               }}
             >
               <motion.div
-                initial={{ scale: 0.9 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0.9 }}
-                className="relative max-w-3xl max-h-[90vh]"
+                key="lightbox-content"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
+                className="relative max-w-3xl max-h-[90vh] will-change-transform"
                 onClick={(e) => e.stopPropagation()}
               >
                 <img
@@ -382,33 +381,27 @@ const SavedGallery = ({ isOpen, onClose }) => {
                 
                 {/* Lightbox Actions */}
                 <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={() => handleDownload(selectedPhoto)}
-                    className="bg-rose-500 hover:bg-rose-600 text-white p-3 rounded-full shadow-lg"
+                    className="bg-rose-500 hover:bg-rose-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
                   >
                     <Download className="w-5 h-5" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                  </button>
+                  <button
                     onClick={() => setSelectedPhoto(null)}
-                    className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-full shadow-lg"
+                    className="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
                   >
                     <X className="w-5 h-5" />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                  </button>
+                  <button
                     onClick={() => {
                       setDeleteConfirm(selectedPhoto.filename)
                       setSelectedPhoto(null)
                     }}
-                    className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg"
+                    className="bg-red-500 hover:bg-red-600 text-white p-3 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95"
                   >
                     <Trash2 className="w-5 h-5" />
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             </motion.div>
