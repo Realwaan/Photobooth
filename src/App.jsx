@@ -43,8 +43,7 @@ function App() {
     sticker: 'none',
     logo: 'ENG',
     addDate: true,
-    addTime: false,
-    template: 'classic'
+    addTime: false
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [previewUrl, setPreviewUrl] = useState(null)
@@ -157,6 +156,7 @@ function App() {
     
     setIsGenerating(true)
     try {
+      console.log('Generating preview with template:', selectedTemplate)
       const stripDataUrl = await generatePhotoStrip(photos, {
         layout: selectedLayout,
         template: selectedTemplate,

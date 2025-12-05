@@ -1449,9 +1449,11 @@ async function generateCoquetteTemplate(photos, options, canvas, ctx) {
   }
   
   // Photo dimensions - 4 circular frames
-  const photoGap = 30
-  const photoPadding = 60
-  const availableHeight = stripHeight - 150
+  const photoGap = 25
+  const photoPadding = 80
+  const headerSpace = 100  // Space for top decorations
+  const footerSpace = 120  // Space for footer bar and text
+  const availableHeight = stripHeight - headerSpace - footerSpace
   const photoSize = (availableHeight - (photoGap * (numPhotos - 1))) / numPhotos
   const photoRadius = Math.min(photoSize * 0.45, (stripWidth - photoPadding * 2) * 0.45)
   
@@ -1459,7 +1461,7 @@ async function generateCoquetteTemplate(photos, options, canvas, ctx) {
   for (let i = 0; i < numPhotos && i < photos.length; i++) {
     const photo = photos[i]
     const centerX = stripWidth / 2
-    const centerY = 80 + photoRadius + i * (photoRadius * 2 + photoGap)
+    const centerY = headerSpace + photoRadius + i * (photoRadius * 2 + photoGap)
     
     try {
       const img = await loadImage(photo.data)
@@ -1502,18 +1504,24 @@ async function generateCoquetteTemplate(photos, options, canvas, ctx) {
   // Decorative bows in corners
   drawBow(80, 60, 30, '#FF91A4')
   drawBow(stripWidth - 80, 60, 30, '#FF91A4')
-  drawBow(80, stripHeight - 100, 25, '#FFB6C1')
-  drawBow(stripWidth - 80, stripHeight - 100, 25, '#FFB6C1')
+  drawBow(80, stripHeight - 140, 25, '#FFB6C1')
+  drawBow(stripWidth - 80, stripHeight - 140, 25, '#FFB6C1')
   
   // Pink footer bar
   ctx.fillStyle = '#FF91A4'
-  ctx.fillRect(0, stripHeight - 60, stripWidth, 60)
+  ctx.fillRect(0, stripHeight - 80, stripWidth, 80)
   
   // Footer text
   ctx.fillStyle = '#FFFFFF'
-  ctx.font = 'bold 24px Georgia, serif'
+  ctx.font = 'bold 28px Georgia, serif'
   ctx.textAlign = 'center'
-  ctx.fillText(customTitle || 'xoxo', stripWidth / 2, stripHeight - 25)
+  ctx.fillText(customTitle || 'xoxo', stripWidth / 2, stripHeight - 35)
+  
+  // Add small hearts around footer text
+  ctx.fillStyle = '#FFFFFF'
+  ctx.font = '16px Arial'
+  ctx.fillText('♡', stripWidth / 2 - 80, stripHeight - 32)
+  ctx.fillText('♡', stripWidth / 2 + 80, stripHeight - 32)
 }
 
 // ============================================
@@ -2586,6 +2594,8 @@ export async function generatePhotoStrip(photos, options) {
     layout = 'layoutF',
     template = 'classic'
   } = options
+
+  console.log('generatePhotoStrip called with template:', template, 'layout:', layout)
 
   // Layout configurations
   const layoutConfig = {

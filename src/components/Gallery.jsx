@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Image,
@@ -20,19 +20,81 @@ import {
  * - Semantic colors for destructive actions (red for delete)
  */
 
+// Memoized photo item component
+const PhotoItem = memo(({ photo, index, onSelect, onDownload, onShare, onDelete }) => (
+  <div
+    className="group relative bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30 overflow-hidden cursor-pointer"
+    onClick={() => onSelect(photo)}
+  >
+    <div className="aspect-video relative overflow-hidden">
+      <img
+        src={photo.data}
+        alt={`Captured on ${photo.timestamp}`}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        loading="lazy"
+        decoding="async"
+      />
+      
+      {/* Overlay on Hover */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
+          {/* Timestamp */}
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <Calendar className="w-3.5 h-3.5" />
+            {photo.timestamp}
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDownload(photo)
+              }}
+              className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onShare(photo)
+              }}
+              className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete(photo.id)
+              }}
+              className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm border border-red-500/20 px-3 py-2 rounded-lg transition-colors text-red-300 text-sm font-medium flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+))
+
+PhotoItem.displayName = 'PhotoItem'
+
 const Gallery = ({ photos, onDeletePhoto }) => {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
 
-  const downloadPhoto = (photo) => {
+  const downloadPhoto = useCallback((photo) => {
     const link = document.createElement('a')
     link.href = photo.data
     link.download = `photobooth-${photo.id}.png`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
+  }, [])
 
-  const sharePhoto = async (photo) => {
+  const sharePhoto = useCallback(async (photo) => {
     try {
       const response = await fetch(photo.data)
       const blob = await response.blob()
@@ -50,7 +112,15 @@ const Gallery = ({ photos, onDeletePhoto }) => {
     } catch (err) {
       console.error('Error sharing:', err)
     }
-  }
+  }, [])
+
+  const handleSelect = useCallback((photo) => {
+    setSelectedPhoto(photo)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    setSelectedPhoto(null)
+  }, [])
 
   // Empty State
   if (photos.length === 0) {
@@ -98,75 +168,18 @@ const Gallery = ({ photos, onDeletePhoto }) => {
         </div>
       </motion.div>
 
-      {/* Gallery Grid */}
+      {/* Gallery Grid - Optimized with memoized components */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {photos.map((photo, index) => (
-          <motion.div
+          <PhotoItem
             key={photo.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
-            className="group relative bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/30 overflow-hidden cursor-pointer"
-            onClick={() => setSelectedPhoto(photo)}
-          >
-            <div className="aspect-video relative overflow-hidden">
-              <img
-                src={photo.data}
-                alt={`Captured on ${photo.timestamp}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              
-              {/* Overlay on Hover */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
-                  {/* Timestamp */}
-                  <div className="flex items-center gap-2 text-white/80 text-sm">
-                    <Calendar className="w-3.5 h-3.5" />
-                    {photo.timestamp}
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        downloadPhoto(photo)
-                      }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2"
-                    >
-                      <Download className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        sharePhoto(photo)
-                      }}
-                      className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 px-3 py-2 rounded-lg transition-colors text-white text-sm font-medium flex items-center justify-center gap-2"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (confirm('Delete this photo?')) {
-                          onDeletePhoto(photo.id)
-                        }
-                      }}
-                      className="bg-red-500/80 hover:bg-red-500 backdrop-blur-sm px-3 py-2 rounded-lg transition-colors text-white flex items-center justify-center"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+            photo={photo}
+            index={index}
+            onSelect={handleSelect}
+            onDownload={downloadPhoto}
+            onShare={sharePhoto}
+            onDelete={onDeletePhoto}
+          />
         ))}
       </div>
 
@@ -178,7 +191,7 @@ const Gallery = ({ photos, onDeletePhoto }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedPhoto(null)}
+            onClick={handleClose}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
